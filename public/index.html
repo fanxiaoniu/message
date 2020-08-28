@@ -3,9 +3,28 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <!-- <meta name="viewport" content="width=device-width,initial-scale=1.0"> -->
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <script>
+      !function () {
+            function updateDpr() {
+                var root = document.documentElement;
+                var width = root.getBoundingClientRect().width > 750 ? 750 : root.getBoundingClientRect().width;
+                root.style.fontSize = width / 10 + 'px';
+            }
+            updateDpr();
+            var timeout;
+            window.addEventListener("resize", function () {
+                clearTimeout(timeout), timeout = setTimeout(updateDpr, 300)
+            }, false);
+            // window.loadingPreventDefault = function (event) {
+            //     event.preventDefault();
+            // }
+            // document.addEventListener('touchstart', loadingPreventDefault);
+            //document.documentElement.addEventListener( 'touchmove', loadingPreventDefault);
+        }();
+    </script>
   </head>
   <body>
     <noscript>
