@@ -27,6 +27,7 @@
 <script>
 import axios from "../axios";
 import Toast from "../components/Toast";
+import { mapActions } from "vuex";
 export default {
   name: "Register",
   data: () => {
@@ -40,30 +41,36 @@ export default {
     Toast
   },
   methods: {
+    ...mapActions("toast", ["showToast"]),
     registerFn() {
-      if (this.username === "" || this.password === "" || this.email) {
-        this.$store.commit("showToast", "用户名,密码，邮箱必填");
+      if (this.username === "" || this.password === "" || this.email === "") {
+        this.showToast({ text: "用户名,密码，邮箱必填" });
         return;
       }
-      axios
-        .post("/user/register", {
+      axios({
+        url: "/user/register",
+        method: "post",
+        data: {
           email: this.email,
           username: this.username,
           password: this.password
-        })
+        }
+      })
         .then(res => {
-          console.log(res);
-          if (res.data.code === "0") {
-            this.$store.commit("showToast", "注册成功,去登录");
-            setTimeout(() => {
-              this.$router.push("/Login");
-            }, 1400);
+          if (res.code === "0") {
+            this.showToast({
+              text: "注册成功,去登录!",
+              time: 1200,
+              afterFn: () => {
+                this.$router.push("/Login");
+              }
+            });
           } else {
-            this.$store.commit("showToast", res.data.errorMsg);
+            this.showToast({ text: res.errorMsg });
           }
         })
         .catch(function(error) {
-          this.$store.commit("showToast", error);
+          this.showToast({ text: error });
         });
     },
     goLogin() {

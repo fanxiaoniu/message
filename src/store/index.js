@@ -1,30 +1,15 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import toast from '../store/toast'
+import answer from '../store/answer'
+
 
 Vue.use(Vuex)
 
 const store = new Vuex.Store({
-    state: {
-        currentItem: {},
-        showAnswerFlag: false,
-        toast: ''
-    },
-    mutations: {
-        setCurrentItem(state, item) {
-            state.currentItem = item
-        },
-        showAnswerBottom(state) {
-            state.showAnswerFlag = true
-        },
-        hideAnswerBottom(state) {
-            state.showAnswerFlag = false
-        },
-        showToast(state, text) {
-            state.toast = text
-        },
-        removeToast(state) {
-            state.toast = ''
-        }
+    modules: {
+        toast,
+        answer
     }
 })
 

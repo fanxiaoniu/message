@@ -1,28 +1,20 @@
 <template>
-  <div class="toast-wrap" v-if="$store.state.toast">
-    <div
-      class="toast"
-      :class="[{ani: $store.state.toast && $store.state.toast }]"
-    >{{$store.state.toast}}</div>
+  <div class="toast-wrap" v-if="toastText">
+    <div class="toast" :class="[{ani: toastText}]">{{toastText}}</div>
   </div>
 </template>
 <script>
+import { mapState } from "vuex";
+
 export default {
   name: "Add",
   data: () => {
-    return {
-      aniFlag: false,
-      interId: null
-    };
+    return {};
   },
-  updated() {
-    this.aniFlag = true;
-    if (this.interId !== null) {
-      clearTimeout(this.interId);
-    }
-    this.interId = setTimeout(() => {
-      this.$store.commit("removeToast");
-    }, 1400);
+  computed: {
+    ...mapState({
+      toastText: state => state.toast.toastText
+    })
   }
 };
 </script>

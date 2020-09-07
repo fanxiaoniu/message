@@ -1,19 +1,19 @@
 <template>
-  <div v-if="done" class="list-wrap">
+  <div class="list-wrap">
     <div class="list" v-if="list.length">
       <div
         v-for="item in list"
         :key="item.key"
         class="item"
         :id="item.id"
-        :class="[{active: (currentId === item.id) && $store.state.showAnswerFlag}]"
+        :class="[{active: (currentId === item.id) && showAnswerFlag}]"
       >
         <div class="item-link" @click="detail(item)">
           <div class="title">{{item.title}}</div>
           <div class="con">{{item.content}}</div>
           <div class="info">
             <span class="date">{{item.created_at.substring(5)}}</span>
-            <span class="auth">{{"用户id:" + item.userid}}</span>
+            <span class="auth">{{item.authName}}</span>
           </div>
         </div>
         <div class="btn-answer" @click="answer(item)"></div>
@@ -26,6 +26,7 @@
 </template>
 <script>
 import axios from "../axios";
+import { mapState, mapActions } from "vuex";
 export default {
   name: "Item",
   data: () => {
@@ -34,7 +35,11 @@ export default {
       isActive: false
     };
   },
-  computed: {},
+  computed: {
+    ...mapState({
+      showAnswerFlag: state => state.answer.showAnswerFlag
+    })
+  },
   props: {
     list: {
       type: Array,
@@ -42,53 +47,78 @@ export default {
         return [];
       }
     },
-    done: {
+    updateFlag: {
       type: Boolean,
       default: false
     }
   },
+  created() {
+    this.goAuth();
+  },
+  watch: {
+    updateFlag(val) {
+      if (val) {
+        this.getAuth(this.list[this.list.length - 1]);
+      }
+    }
+  },
   methods: {
+    ...mapActions("answer", [
+      "showAnswerBottom",
+      "hideAnswerBottom",
+      "setCurrentItem"
+    ]),
+    goAuth() {
+      for (let item of this.list) {
+        this.getAuth(item);
+      }
+    },
     answer(item) {
-      if (
-        this.isActive &&
-        this.currentId === item.id &&
-        this.$store.state.showAnswerFlag
-      ) {
+      if (this.isActive && this.currentId === item.id && this.showAnswerFlag) {
         this.isActive = false;
-        this.$store.commit("hideAnswerBottom");
+        this.hideAnswerBottom();
       } else {
         this.isActive = true;
         this.currentId = item.id;
-        this.$store.commit("setCurrentItem", item);
-        this.$store.commit("showAnswerBottom");
+        this.setCurrentItem(item);
+        this.showAnswerBottom();
       }
     },
     detail(item) {
-      this.$store.commit("hideAnswerBottom");
-      this.$store.commit("setCurrentItem", item);
-      this.$router.push({
-        path: "/Detail",
-        query: {
+      this.hideAnswerBottom();
+      this.setCurrentItem(item);
+      sessionStorage.setItem(
+        "currentItem",
+        JSON.stringify({
           title: item.title,
           content: item.content,
           created_at: item.created_at,
           userid: item.userid,
-          id: item.id
-        }
+          id: item.id,
+          authName: item.authName
+        })
+      );
+      this.$router.push({
+        path: "/Detail"
       });
     },
-    getAuth(userid) {
+    getAuth(item) {
       axios({
         method: "get",
         url: "/user/get",
-        id: userid
+        params: { id: item.userid }
       })
         .then(res => {
-          console.log(res);
+          if (res.code === "0" && res.result !== null) {
+            this.$set(item, "authName", res.result.username);
+          } else {
+            this.$set(item, "authName", "");
+          }
         })
         .catch(error => {
           console.log(error);
-        });
+        })
+        .finally(() => {});
     }
   }
 };

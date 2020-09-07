@@ -23,6 +23,7 @@
 
 <script>
 import axios from "../axios";
+import { mapActions } from "vuex";
 export default {
   name: "Add",
   data: () => {
@@ -33,21 +34,27 @@ export default {
   },
   props: ["addShowFlag"],
   methods: {
+    ...mapActions("toast", ["showToast"]),
     AddFn() {
       if (this.title === "" || this.content === "") {
-        this.$store.commit("showToast", "标题，内容不能为空！");
+        this.showToast({ text: "标题，内容不能为空！" });
         return;
       }
-      axios
-        .post("/message/send", {
+      axios({
+        method: "post",
+        url: "/message/send",
+        data: {
           title: this.title,
           content: this.content,
           userid: JSON.parse(sessionStorage.getItem("userInfo")).user_id
-        })
+        }
+      })
         .then(res => {
-          if (res.data.code === "0") {
-            this.$store.commit("showToast", "添加成功！");
+          if (res.code === "0") {
+            this.showToast({ text: "添加成功！" });
             this.$emit("addList");
+            this.title = "";
+            this.content = "";
           }
         })
         .catch(error => {
@@ -124,6 +131,6 @@ export default {
   height: 86px;
   background: url(../assets/delete.png) no-repeat;
   background-size: 100% auto;
-  border:0;
+  border: 0;
 }
 </style>

@@ -1,6 +1,12 @@
 <template>
   <div class="page-list">
-    <Item :list="list" :done="done" @answerShowFn="answerShowFn" :answerShowFlag="answerShowFlag"></Item>
+    <Item
+      v-if="list.length > 0"
+      :list="list"
+      @answerShowFn="answerShowFn"
+      :answerShowFlag="answerShowFlag"
+      :updateFlag="updateFlag"
+    ></Item>
     <Add @addList="updateList" :addShowFlag="addShowFlag" @closeShowFn="closeShowFn"></Add>
     <div class="float">
       <button class="float-btn btn-search" @click="goSearch"></button>
@@ -26,7 +32,7 @@ export default {
       answerShowFlag: false,
       currentItem: {},
       answerContent: "",
-      done: false
+      updateFlag: false
     };
   },
   components: {
@@ -45,19 +51,27 @@ export default {
         url: "/message/list"
       })
         .then(res => {
-          if (res.data.code === "0") {
-            this.list = res.data.result;
+          if (res.code === "0") {
+            if (this.list.length === 0) {
+              this.list = res.result;
+            } else {
+              this.list.push(res.result.pop());
+            }
+            if (this.addShowFlag === true) {
+              this.updateFlag = true;
+            }
           }
         })
         .catch(error => {
           console.log(error);
         })
         .finally(() => {
-          this.done = true;
+          this.updateFlag = true;
+          this.closeShowFn();
         });
     },
     updateList() {
-      this.addShowFlag = false;
+      this.updateFlag = false;
       this.getList();
     },
     goSearch() {
@@ -75,26 +89,15 @@ export default {
     },
     closeAnswerFn() {
       this.answerShowFlag = false;
-    },
-    submitAnswer() {
-      axios({
-        method: "post",
-        url: "/reply/send",
-        content: this.answerContent,
-        messageid: this.currentItem.id,
-        userid: sessionStorage.getItem("userInfo").user_id
-      })
-        .then(res => {
-          console.log(res);
-        })
-        .catch(error => {
-          console.log(error);
-        });
     }
   }
 };
 </script>
 <style scoped>
+.page-list {
+  padding-bottom: 248px;
+  box-sizing: border-box;
+}
 .float {
   position: fixed;
   right: 32px;

@@ -2,7 +2,7 @@
   <div class="page-login">
     <div class="form-wrap">
       <div class="form">
-        <div class="form-title">快速登录</div>
+        <div class="form-title">快速登陆</div>
         <div class="row">
           <input class="ui-input" v-model.trim="username" placeholder="用户名/手机号码/电子邮箱" />
         </div>
@@ -10,7 +10,7 @@
           <input class="ui-input" type="password" v-model.trim="password" placeholder="请输入密码" />
         </div>
         <div class="btn-wrap">
-          <button @click="loginFn" class="btn">登录</button>
+          <button @click="loginFn" class="btn">登陆</button>
         </div>
         <div class="tc forget" @click="forgetFn">忘记密码怎么办？</div>
       </div>
@@ -25,6 +25,7 @@
 <script>
 import axios from "../axios";
 import Toast from "../components/Toast";
+import { mapActions } from "vuex";
 
 export default {
   name: "Login",
@@ -38,25 +39,35 @@ export default {
     Toast
   },
   methods: {
+    ...mapActions("toast", ["showToast"]),
     loginFn() {
       if (this.username === "" || this.password === "") {
-        this.$store.commit("showToast", "用户名，密码必填");
+        this.showToast({ text: "用户名，密码必填", time: 1200 });
         return;
       }
-      axios
-        .post("/auth/login", {
+      axios({
+        method: "post",
+        url: "/auth/login",
+        data: {
           username: this.username,
-          password: this.password
-        })
+          password: this.$md5(this.password)
+        }
+      })
         .then(res => {
-          if (res.data.code === "0") {
-            sessionStorage.setItem("userInfo", JSON.stringify(res.data.data));
-            this.$store.commit("showToast", "登录成功");
-            axios.defaults.headers.common["Authorization"] =
-              `Bearer ` + res.data.data.access_token;
-            setTimeout(() => {
-              this.$router.push("/List");
-            }, 1400);
+          if (res.code === "0") {
+            sessionStorage.setItem("userInfo", JSON.stringify(res.data));
+            this.showToast({
+              text: "登陆成功",
+              time: 1200,
+              afterFn: () => {
+                this.$router.push(this.$route.query.redirect || "/List");
+              }
+            });
+          } else if (res.code === "201") {
+            this.showToast({
+              text: res.errorMsg,
+              time: 1200
+            });
           }
         })
         .catch(error => {
@@ -67,7 +78,7 @@ export default {
       this.$router.push("/Register");
     },
     forgetFn() {
-      this.$store.commit("showToast", "请联系管理员");
+      this.showToast({ text: "请联系管理员!", time: 1200 });
     }
   }
 };

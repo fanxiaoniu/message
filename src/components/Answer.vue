@@ -1,17 +1,19 @@
 <template>
-  <div class="fix-bottom" :class="[{ show: $store.state.showAnswerFlag}]">
+  <div class="fix-bottom" :class="[{ show: showAnswerFlag}]">
     <div class="mask" @click="closeAnswerFn" style="display: none"></div>
     <div class="bottom">
       <div class="handle">
         <button class="btn-cancel" @click="closeAnswerFn">取消</button>
         <button class="btn-answer" @click="submitAnswer">回复</button>
       </div>
-      <textarea :placeholder="`回复${$store.state.currentItem.userid}`" v-model.trim="answerContent"></textarea>
+      <textarea :placeholder="`回复${currentItem.authName || ''}`" v-model.trim="answerContent"></textarea>
     </div>
   </div>
 </template>
 <script>
 import axios from "../axios";
+import { getNowFormatDate } from "../utils/utils";
+import { mapState, mapActions } from "vuex";
 export default {
   name: "Answer",
   data: () => {
@@ -19,37 +21,57 @@ export default {
       answerContent: ""
     };
   },
+  computed: {
+    ...mapState({
+      showAnswerFlag: state => state.answer.showAnswerFlag,
+      currentItem: state => state.answer.currentItem
+    })
+  },
   methods: {
+    ...mapActions("toast", ["showToast"]),
+    ...mapActions("answer", ["hideAnswerBottom"]),
     closeAnswerFn() {
-      this.$store.commit("hideAnswerBottom");
+      this.hideAnswerBottom();
     },
     submitAnswer() {
       if (this.answerContent === "") {
-        this.$store.commit("showToast", "回复内容不能为空");
+        this.showToast({ text: "回复内容不能为空" });
         return;
       }
-      axios
-        .post("/reply/send", {
+      axios({
+        method: "post",
+        url: "/reply/send",
+        data: {
           userid: JSON.parse(sessionStorage.getItem("userInfo")).user_id,
-          messageid: this.$store.state.currentItem.id,
+          messageid: this.currentItem.id,
           content: this.answerContent
-        })
+        }
+      })
         .then(res => {
-          if (res.data.code === "0") {
-            this.$store.commit("showToast", "回复成功");
-            this.$store.commit("hideAnswerBottom");
+          if (res.code === "0") {
+            this.showToast({ text: "回复成功！", time: 1200 });
+            this.hideAnswerBottom();
+            if (this.$route.name === "Detail") {
+              this.$emit("updateAnswer", {
+                id: Date.parse(new Date()),
+                content: this.answerContent,
+                created_at: getNowFormatDate(),
+                userid: JSON.parse(sessionStorage.getItem("userInfo")).user_id
+              });
+            }
+            this.answerContent = "";
           } else {
-            this.$store.commit("showToast", "回复失败");
+            this.showToast({ text: "回复失败" });
           }
         })
         .catch(error => {
           console.log(error);
-          this.$store.commit("showToast", error);
+          this.showToast({ text: "回复失败" });
         });
     }
   },
   destroyed() {
-    this.$store.commit("hideAnswerBottom");
+    this.hideAnswerBottom();
   }
 };
 </script>
